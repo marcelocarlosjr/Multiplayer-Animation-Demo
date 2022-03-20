@@ -12,9 +12,14 @@ public class Bullet : NetworkComponent
         
     }
 
+    public void Destroy()
+    {
+        MyCore.NetDestroyObject(this.NetId);
+    }
+
     public override void NetworkedStart()
     {
-
+        
     }
 
     public override IEnumerator SlowUpdate()
@@ -27,6 +32,7 @@ public class Bullet : NetworkComponent
         if (IsServer)
         {
             MyRig = GetComponent<Rigidbody2D>();
+            Invoke("Destroy", 3.0f);
         }
     }
 
@@ -34,7 +40,8 @@ public class Bullet : NetworkComponent
     {
         if (IsServer)
         {
-            MyRig.velocity = this.transform.forward * Speed;
+            MyRig.velocity = this.transform.right * Speed;
         }
     }
+
 }

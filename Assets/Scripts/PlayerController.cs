@@ -16,12 +16,17 @@ public class PlayerController : NetworkComponent
     public float JumpInput;
     public float FireInput;
     public float lastDir;
+    public bool Shooting;
+    public bool Jumping;
+    public float FaceDir;
+    public bool FireAnimation;
 
     float STATE;
     float IDLESTATE = 0;
     float RUNSTATE = 1;
     float JUMPSTATE = 2;
     float FALLSTATE = 3;
+    float ATTACKSTATE = 4;
     public LayerMask GroundLayer;
     public override void HandleMessage(string flag, string value)
     {
@@ -49,6 +54,13 @@ public class PlayerController : NetworkComponent
         if(flag == "FIRE" && IsServer)
         {
             FireInput = float.Parse(value);
+            if (FireInput > 0)
+            {
+                if (!Shooting)
+                {
+                    StartCoroutine(Fire());
+                }
+            }
         }
     }
 
@@ -105,10 +117,24 @@ public class PlayerController : NetworkComponent
         }
     }
 
+    public IEnumerator FireAnim()
+    {
+        FireAnimation = true;
+        STATE = ATTACKSTATE;
+        yield return new WaitForSeconds(0.3f);
+        FireAnimation = false;
+    }
+
     public IEnumerator Fire()
     {
-        MyCore.NetCreateObject(1, this.Owner, this.transform.position, Quaternion.Euler(this.transform.forward));
-        yield return new WaitForSeconds(.6f);
+        if (IsServer)
+        {
+            Shooting = true;
+            StartCoroutine(FireAnim());
+            MyCore.NetCreateObject(1, this.Owner, this.transform.position, Quaternion.Euler(new Vector3 (0,0,FaceDir)));
+            yield return new WaitForSeconds(1f);
+            Shooting = false;
+        }
     }
     void Start()
     {
@@ -129,10 +155,12 @@ public class PlayerController : NetworkComponent
         if(dir == 0)
         {
             this.GetComponent<SpriteRenderer>().flipX = true;
+            FaceDir = 180;
         }
         if(dir == 1)
         {
             this.GetComponent<SpriteRenderer>().flipX = false;
+            FaceDir = 0;
         }
         if (IsServer)
         {
@@ -144,7 +172,7 @@ public class PlayerController : NetworkComponent
     {
         Vector2 position = transform.position;
         Vector2 direction = Vector2.down;
-        float distance = 1.5f;
+        float distance = 1.2f;
 
         RaycastHit2D hit = Physics2D.Raycast(position, direction, distance, GroundLayer);
         if(hit.collider != null)
@@ -153,23 +181,30 @@ public class PlayerController : NetworkComponent
         }
         return false;
     }
+    public IEnumerator Jump()
+    {
+        if (IsServer)
+        {
+            Jumping = true;
+            MyRig.AddForce(new Vector2(0, 12), ForceMode2D.Impulse);
+            yield return new WaitForSeconds(.2f);
+            Jumping = false;
+        }
+    }
 
     private void Update()
     {
         if (IsServer)
         {
-            if(FireInput > 0)
-            {
-                StartCoroutine(Fire());
-            }
-
             MyRig.velocity = new Vector2(LastMove.x * Speed, MyRig.velocity.y);
 
             if(JumpInput > 0 && IsGrounded())
             {
-                MyRig.AddForce(new Vector2(0, 1), ForceMode2D.Impulse);
+                if (!Jumping)
+                {
+                    StartCoroutine(Jump());
+                }
             }
-
             if(LastMove.x < 0)
             {
                 Flip(0);
@@ -178,19 +213,19 @@ public class PlayerController : NetworkComponent
             {
                 Flip(1);
             }
-            if(LastMove.x == 0 && IsGrounded())
+            if(LastMove.x == 0 && IsGrounded() && !FireAnimation)
             {
                 STATE = IDLESTATE;
             }
-            if(LastMove.x != 0 && IsGrounded())
+            if(LastMove.x != 0 && IsGrounded() && !FireAnimation)
             {
                 STATE = RUNSTATE;
             }
-            if (MyRig.velocity.y > 0)
+            if (MyRig.velocity.y > 0 && !FireAnimation)
             {
                 STATE = JUMPSTATE;
             }
-            if (MyRig.velocity.y < 0)
+            if (MyRig.velocity.y < 0 && !FireAnimation)
             {
                 STATE = FALLSTATE;
             }

@@ -124,7 +124,7 @@ Rigidbody2D:
   m_LinearDrag: 0
   m_AngularDrag: 0.05
   m_GravityScale: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 1c5de0ba96587d24499df67e1a31babb, type: 2}
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
@@ -195,6 +195,8 @@ MonoBehaviour:
   JumpInput: 0
   FireInput: 0
   lastDir: 0
+  Shooting: 0
+  Jumping: 0
   GroundLayer:
     serializedVersion: 2
     m_Bits: 128

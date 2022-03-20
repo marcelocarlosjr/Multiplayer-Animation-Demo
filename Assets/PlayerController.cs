@@ -14,6 +14,7 @@ public class PlayerController : NetworkComponent
     public Vector2 PlayerInput;
     public Vector2 LastMove;
     public float JumpInput;
+    public float FireInput;
     public float lastDir;
 
     float STATE;
@@ -43,6 +44,11 @@ public class PlayerController : NetworkComponent
         {
             STATE = float.Parse(value);
             AnimationController.SetFloat("State", STATE);
+        }
+
+        if(flag == "FIRE" && IsServer)
+        {
+            FireInput = float.Parse(value);
         }
     }
 
@@ -88,6 +94,21 @@ public class PlayerController : NetworkComponent
             JumpInput = context.ReadValue<float>();
             SendCommand("MOVE", PlayerInput.x + "," + JumpInput);
         }
+    }
+
+    public void GetFire(InputAction.CallbackContext context)
+    {
+        if (IsLocalPlayer)
+        {
+            FireInput = context.ReadValue<float>();
+            SendCommand("FIRE", FireInput.ToString());
+        }
+    }
+
+    public IEnumerator Fire()
+    {
+        MyCore.NetCreateObject(1, this.Owner, this.transform.position, Quaternion.Euler(this.transform.forward));
+        yield return new WaitForSeconds(.6f);
     }
     void Start()
     {
@@ -137,6 +158,11 @@ public class PlayerController : NetworkComponent
     {
         if (IsServer)
         {
+            if(FireInput > 0)
+            {
+                StartCoroutine(Fire());
+            }
+
             MyRig.velocity = new Vector2(LastMove.x * Speed, MyRig.velocity.y);
 
             if(JumpInput > 0 && IsGrounded())

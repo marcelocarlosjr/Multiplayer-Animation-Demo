@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 72157238081247261}
   - component: {fileID: 72157238081247258}
   - component: {fileID: 2046832055555280217}
+  - component: {fileID: 2459660924094509081}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -98,7 +99,7 @@ Animator:
   m_GameObject: {fileID: 72157238081247270}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 39d3613c3d78bfe4093dfef7d325778a, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -127,7 +128,7 @@ Rigidbody2D:
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
-  m_Constraints: 0
+  m_Constraints: 4
 --- !u!114 &72157238081247260
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -168,7 +169,7 @@ MonoBehaviour:
   LastAngular: 0
   OffsetVelocity: {x: 0, y: 0}
   Threshold: 0.1
-  EThreshold: 2.5
+  EThreshold: 0.5
   MyRig: {fileID: 0}
   UseOffsetVelocity: 1
 --- !u!114 &72157238081247258
@@ -186,11 +187,17 @@ MonoBehaviour:
   MyCore: {fileID: 0}
   MyId: {fileID: 0}
   IsDirty: 0
-  Speed: 4
   MyRig: {fileID: 0}
+  AnimationController: {fileID: 0}
+  Speed: 4
   PlayerInput: {x: 0, y: 0}
   LastMove: {x: 0, y: 0}
+  JumpInput: 0
   lastDir: 0
+  AnimationState: 0
+  GroundLayer:
+    serializedVersion: 2
+    m_Bits: 128
 --- !u!114 &2046832055555280217
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -280,8 +287,40 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: d10cbdc9-0962-4a9c-85e0-99b5fab8db79
     m_ActionName: UI/TrackedDeviceOrientation
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 72157238081247258}
+        m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
+        m_MethodName: GetJump
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 20bef6a8-c746-4963-9ae7-8a5d4f6662f8
+    m_ActionName: Player/Jump[/Keyboard/space,/Keyboard/w,/Keyboard/upArrow]
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
+--- !u!70 &2459660924094509081
+CapsuleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 72157238081247270}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: -0.17}
+  m_Size: {x: 0.88, y: 1.89}
+  m_Direction: 0

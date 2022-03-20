@@ -7,16 +7,21 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(NetworkRigidBody2D))]
 public class PlayerController : NetworkComponent
 {
-    public float Speed;
     public Rigidbody2D MyRig;
+    public Animator AnimationController;
+
+    public float Speed;
     public Vector2 PlayerInput;
     public Vector2 LastMove;
+    public float JumpInput;
     public float lastDir;
-    public float AnimationState;
 
+    float STATE;
     float IDLESTATE = 0;
     float RUNSTATE = 1;
     float JUMPSTATE = 2;
+    float FALLSTATE = 3;
+    public LayerMask GroundLayer;
     public override void HandleMessage(string flag, string value)
     {
         if (flag == "MOVE" && IsServer)
@@ -25,6 +30,7 @@ public class PlayerController : NetworkComponent
             float h = float.Parse(args[0]);
             float v = float.Parse(args[1]);
             LastMove = new Vector2(h, v);
+            JumpInput = v;
         }
 
         if(flag == "FLIP" && IsClient)
@@ -35,7 +41,8 @@ public class PlayerController : NetworkComponent
 
         if(flag == "STATE" && IsClient)
         {
-
+            STATE = float.Parse(value);
+            AnimationController.SetFloat("State", STATE);
         }
     }
 
@@ -57,6 +64,7 @@ public class PlayerController : NetworkComponent
                 if (IsDirty)
                 {
                     SendUpdate("FLIP", lastDir.ToString());
+                    SendUpdate("STATE", STATE.ToString());
                     IsDirty = false;
                 }
             }
@@ -69,15 +77,29 @@ public class PlayerController : NetworkComponent
         if (IsLocalPlayer)
         {
             PlayerInput = context.ReadValue<Vector2>();
-            SendCommand("MOVE", PlayerInput.x + "," + PlayerInput.y);
+            SendCommand("MOVE", PlayerInput.x + "," + JumpInput);
+        }
+    }
+
+    public void GetJump(InputAction.CallbackContext context)
+    {
+        if (IsLocalPlayer)
+        {
+            JumpInput = context.ReadValue<float>();
+            SendCommand("MOVE", PlayerInput.x + "," + JumpInput);
         }
     }
     void Start()
     {
         MyRig = GetComponent<Rigidbody2D>();
+        AnimationController = GetComponent<Animator>();
         if (MyRig == null)
         {
             throw new System.Exception("ERROR: Could not find Rigidbody!");
+        }
+        if (AnimationController == null)
+        {
+            throw new System.Exception("ERROR: Could not find Animator!");
         }
     }
 
@@ -97,21 +119,58 @@ public class PlayerController : NetworkComponent
         }
     }
 
+    bool IsGrounded()
+    {
+        Vector2 position = transform.position;
+        Vector2 direction = Vector2.down;
+        float distance = 1.5f;
+
+        RaycastHit2D hit = Physics2D.Raycast(position, direction, distance, GroundLayer);
+        if(hit.collider != null)
+        {
+            return true;
+        }
+        return false;
+    }
+
     private void Update()
     {
         if (IsServer)
         {
-            MyRig.velocity = LastMove * Speed;
+            MyRig.velocity = new Vector2(LastMove.x * Speed, MyRig.velocity.y);
+
+            if(JumpInput > 0 && IsGrounded())
+            {
+                MyRig.AddForce(new Vector2(0, 1), ForceMode2D.Impulse);
+            }
 
             if(LastMove.x < 0)
             {
                 Flip(0);
-
             }
             if(LastMove.x > 0)
             {
                 Flip(1);
             }
+            if(LastMove.x == 0 && IsGrounded())
+            {
+                STATE = IDLESTATE;
+            }
+            if(LastMove.x != 0 && IsGrounded())
+            {
+                STATE = RUNSTATE;
+            }
+            if (MyRig.velocity.y > 0)
+            {
+                STATE = JUMPSTATE;
+            }
+            if (MyRig.velocity.y < 0)
+            {
+                STATE = FALLSTATE;
+            }
+            
+            AnimationController.SetFloat("State", STATE);
+            SendUpdate("STATE", STATE.ToString());
         }
     }
 }
